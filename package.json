@@ -10,7 +10,8 @@
     "start:dist": "node dist/src/index.js",
     "lint": "eslint --fix src test",
     "test": "jest",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "postinstall": "prisma generate"
   },
   "keywords": [],
   "author": "Akash",
@@ -19,6 +20,7 @@
   },
   "license": "MIT",
   "dependencies": {
+    "@prisma/client": "^6.9.0",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
@@ -43,6 +45,7 @@
     "eslint-plugin-import": "^2.31.0",
     "jest": "^29.7.0",
     "nodemon": "^3.1.7",
+    "prisma": "^6.9.0",
     "supertest": "^7.0.0",
     "ts-jest": "^29.2.5",
     "ts-node": "^10.9.2",
