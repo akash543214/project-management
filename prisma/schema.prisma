@@ -8,28 +8,54 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Project {
-  id         Int       @id @default(autoincrement())
-  name       String
-  user_id    Int
-  created_at DateTime? @default(now()) @db.Timestamp(6)
-  User       User      @relation(fields: [user_id], references: [id], onDelete: Cascade)
-  Task       Task[]
-}
-
-model Task {
-  id         Int       @id @default(autoincrement())
-  project_id Int
-  title      String
-  content    String?
-  created_at DateTime? @default(now()) @db.Timestamp(6)
-  Project    Project   @relation(fields: [project_id], references: [id], onDelete: Cascade)
-}
-
 model User {
   id         Int       @id @default(autoincrement())
   name       String
   email      String    @unique
-  created_at DateTime? @default(now()) @db.Timestamp(6)
-  Project    Project[]
+  created_at DateTime  @default(now()) @db.Timestamp(6)
+
+  projects   Project[]
+  tasks      Task[] @relation("AssignedTasks")
+}
+
+model Project {
+  id         Int       @id @default(autoincrement())
+  name       String
+  user_id    Int
+  created_at DateTime  @default(now()) @db.Timestamp(6)
+
+  owner      User      @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  tasks      Task[]
+}
+
+model Task {
+  id              Int        @id @default(autoincrement())
+  title           String
+  content         String?
+  project_id      Int
+  parent_task_id  Int?
+  assignee_id     Int?
+  status          TaskStatus   @default(PENDING)
+  priority        TaskPriority @default(MEDIUM)
+  deadline        DateTime? 
+  created_at      DateTime     @default(now()) @db.Timestamp(6)
+
+  project         Project    @relation(fields: [project_id], references: [id], onDelete: Cascade)
+  assignee        User?      @relation("AssignedTasks", fields: [assignee_id], references: [id])
+  parent_task     Task?      @relation("Subtasks", fields: [parent_task_id], references: [id])
+  subtasks        Task[]     @relation("Subtasks")
+}
+
+enum TaskStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  BLOCKED
+}
+
+enum TaskPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
 }

@@ -4,7 +4,6 @@ import { ApiResponse } from '../utils/apiResponse';
 import { PrismaClient } from '../generated/prisma/index';
 const prisma = new PrismaClient();
 
-
 const registerUser = asyncHandler(async(req: Request, res: Response) => {
  const { name, email } = req.body;
 
