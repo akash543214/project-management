@@ -9,13 +9,18 @@ datasource db {
 }
 
 model User {
-  id         Int       @id @default(autoincrement())
-  name       String
-  email      String    @unique
-  created_at DateTime  @default(now()) @db.Timestamp(6)
+  id           Int           @id @default(autoincrement())
+  name         String
+  email        String        @unique
+  password     String?       // Nullable: only required for local users
+  googleId     String?       @unique
+  provider     AuthProvider  @default(local)
+  refreshToken String?
 
-  projects   Project[]
-  tasks      Task[] @relation("AssignedTasks")
+  created_at   DateTime      @default(now()) @db.Timestamp(6)
+
+  projects     Project[]
+  tasks        Task[]        @relation("AssignedTasks")
 }
 
 model Project {
@@ -58,4 +63,9 @@ enum TaskPriority {
   MEDIUM
   HIGH
   URGENT
+}
+
+enum AuthProvider {
+  local
+  google
 }
