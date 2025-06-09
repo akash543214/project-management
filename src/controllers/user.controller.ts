@@ -4,40 +4,51 @@ import { ApiResponse } from '../utils/apiResponse';
 import { PrismaClient } from '../generated/prisma/index';
 import ApiError from '../utils/apiError';
 import bcrypt from "bcrypt";
+import { RegisterUserSchema } from '../schemas/user.schema';
+import { z } from "zod";
 
 const prisma = new PrismaClient();
 
-const registerUser = asyncHandler(async(req: Request, res: Response) => {
- const { name, email, password,provider } = req.body;
+// Type definitions for request bodies
+type RegisterUserRequest = z.infer<typeof RegisterUserSchema>;
 
-  // Check if user already exists
-  const existingUser = await prisma.user.findUnique({ where: { email } });
-  if (existingUser) {
-      throw new ApiError("user already exist",500);
-  }
 
-   let hashedPassword: string | undefined;
-  if (provider === "local") {
-    if (!password) {
-      throw new ApiError("Password is required",400);  
-      }
-    hashedPassword = await bcrypt.hash(password, 12);
-  }
+const registerUser = asyncHandler(async (req: Request<{}, {}, RegisterUserRequest>, res: Response) => {
+  
+    // At this point, req.body is already validated and sanitized by Zod
+    const { name, email, password } = req.body;
 
-  // Create user
-  const newUser = await prisma.user.create({
-    data: {
-      name,
-      email,
-      password: hashedPassword,
-      provider,
-    },
-  });
+    // Check if user already exists
+    const existingUser = await prisma.user.findUnique({
+        where: { email } 
+    });
 
-  res.status(200).json(new ApiResponse(200, newUser, "Resgistration successfully"));
+    if (existingUser) {
+        throw new ApiError("User already exists", 409);
+    }
 
-   
+    // Hash password
+    const saltRounds = parseInt(process.env.BCRYPT_ROUNDS || '12');
+    const hashedPassword = await bcrypt.hash(password, saltRounds);
+
+    // Create LOCAL user
+    const newUser = await prisma.user.create({
+        data: {
+            name, // Already sanitized by Zod
+            email, // Already sanitized by Zod
+            password: hashedPassword,
+            provider: "local"
+        },
+    });
+
+    // Remove password from response
+    const { password: _, ...userResponse } = newUser;
+    
+    res.status(201).json(
+        new ApiResponse(201, userResponse, "Registration successful")
+    );
 });
+
 
 export {
     registerUser
