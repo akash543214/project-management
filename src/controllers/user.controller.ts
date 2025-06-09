@@ -5,13 +5,14 @@ import { PrismaClient } from '../generated/prisma/index';
 import ApiError from '../utils/apiError';
 import bcrypt from "bcrypt";
 import { RegisterUserSchema } from '../schemas/user.schema';
+import { LoginUserSchema } from '../schemas/user.schema';
 import { z } from "zod";
 
 const prisma = new PrismaClient();
 
 // Type definitions for request bodies
 type RegisterUserRequest = z.infer<typeof RegisterUserSchema>;
-
+type LoginUserRequest = z.infer<typeof LoginUserSchema>;
 
 const registerUser = asyncHandler(async (req: Request<{}, {}, RegisterUserRequest>, res: Response) => {
   
@@ -49,7 +50,17 @@ const registerUser = asyncHandler(async (req: Request<{}, {}, RegisterUserReques
     );
 });
 
+const loginUser = asyncHandler(async (req: Request<{}, {}, LoginUserRequest>, res: Response) => {
+
+const {  email, password } = req.body;
+ res.status(201).json(
+        new ApiResponse(201, {email,password}, "login successful")
+    );
+});
+
+
 
 export {
-    registerUser
+    registerUser,
+    loginUser
 }
