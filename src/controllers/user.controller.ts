@@ -6,6 +6,7 @@ import ApiError from '../utils/apiError';
 import bcrypt from "bcrypt";
 import { RegisterUserSchema } from '../schemas/user.schema';
 import { LoginUserSchema } from '../schemas/user.schema';
+import { generateAccessToken,generateRefreshToken } from '../utils/jwt';
 import { z } from "zod";
 
 const prisma = new PrismaClient();
@@ -53,14 +54,64 @@ const registerUser = asyncHandler(async (req: Request<{}, {}, RegisterUserReques
 const loginUser = asyncHandler(async (req: Request<{}, {}, LoginUserRequest>, res: Response) => {
 
 const {  email, password } = req.body;
- res.status(201).json(
-        new ApiResponse(201, {email,password}, "login successful")
-    );
+
+const user = await prisma.user.findUnique({where:{email}});
+
+if(!user)
+{ 
+    throw new ApiError("User does not exists", 400);
+}
+
+ const passwordMatch = await bcrypt.compare(password, user.password!);
+
+  if (!passwordMatch) {
+    throw new ApiError("Incorrect password", 400);
+  }
+
+ const payload = { id: user.id, email: user.email };
+
+  const accessToken = generateAccessToken(payload);
+  const refreshToken = generateRefreshToken(payload);
+
+  // Save refresh token in DB
+  await prisma.user.update({
+    where: { id: user.id },
+    data: { refreshToken }
+  });
+
+  const { password: _, refreshToken: __, ...userResponse } = user;
+
+
+   const options = {
+       httpOnly: true,
+       secure: true
+   }
+
+    res
+   .status(200)
+   .cookie("accessToken", accessToken, options)
+   .cookie("refreshToken", refreshToken, options).json(
+    new ApiResponse(200, {
+      user: userResponse,
+      accessToken,
+      refreshToken,
+    }, "Login successful")
+  );
+
 });
 
+const logoutUser = asyncHandler(async (req: Request, res: Response) => {
 
+ res.clearCookie('accessToken')
+    .clearCookie('refreshToken')
+    .status(200).json(
+        new ApiResponse(201, {}, "Logout successful")
+    );
+
+});
 
 export {
     registerUser,
-    loginUser
+    loginUser,
+    logoutUser
 }
