@@ -1,7 +1,7 @@
 import passport from "passport";
 import { Strategy as GoogleStrategy } from "passport-google-oauth20";
-import { PrismaClient } from '../generated/prisma/index';
-const prisma = new PrismaClient();
+import { prisma } from '../lib/prisma';
+
 
 passport.use(
   new GoogleStrategy(
@@ -15,7 +15,7 @@ passport.use(
         let user = await prisma.user.findUnique({
           where: { googleId: profile.id }
         });
- console.log(user);
+        
         if (!user) {
           user = await prisma.user.create({
             data: {

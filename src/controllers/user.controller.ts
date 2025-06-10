@@ -4,7 +4,6 @@ import { verifyRefreshToken } from '../utils/jwt';
 // Extend Express Request interface to include 'user' (compatible with passport)
 
 import { ApiResponse } from '../utils/apiResponse';
-import { PrismaClient } from '../generated/prisma/index';
 import ApiError from '../utils/apiError';
 import bcrypt from "bcrypt";
 import { RegisterUserSchema } from '../schemas/user.schema';
@@ -12,7 +11,7 @@ import { LoginUserSchema } from '../schemas/user.schema';
 import { generateAccessToken,generateRefreshToken } from '../utils/jwt';
 import { z } from "zod";
 
-const prisma = new PrismaClient();
+import { prisma } from '../lib/prisma';
 
 // Type definitions for request bodies
 type RegisterUserRequest = z.infer<typeof RegisterUserSchema>;
