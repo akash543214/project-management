@@ -3,7 +3,8 @@ import ApiError from "../utils/apiError";
 import { verifyAccessToken } from "../utils/jwt";
 
 export const verifyJWT = (req: Request, res: Response, next: NextFunction) => {
-  // Assuming your access token cookie is named 'accessToken'
+
+  // Assuming access token cookie is named 'accessToken'
   const token = req.cookies?.accessToken;
 
   if (!token) {
@@ -11,7 +12,7 @@ export const verifyJWT = (req: Request, res: Response, next: NextFunction) => {
   }
 
   try {
-    const payload = verifyAccessToken(token) as { id: string; email: string };
+    const payload = verifyAccessToken(token) as { id: number; email: string };
     
     // Attach user info to req for downstream handlers
     (req as any).user = payload;
