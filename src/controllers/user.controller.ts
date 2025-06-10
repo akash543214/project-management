@@ -1,14 +1,8 @@
 import { Request, Response } from 'express';
 import { asyncHandler } from '../utils/asyncHandler';
 import { verifyRefreshToken } from '../utils/jwt';
-// Extend Express Request interface to include 'user'
-declare global {
-  namespace Express {
-    interface Request {
-      user?: any;
-    }
-  }
-}
+// Extend Express Request interface to include 'user' (compatible with passport)
+
 import { ApiResponse } from '../utils/apiResponse';
 import { PrismaClient } from '../generated/prisma/index';
 import ApiError from '../utils/apiError';
@@ -112,14 +106,20 @@ if(!user)
 const logoutUser = asyncHandler(async (req: Request, res: Response) => {
 
            
-        const {email} = req?.user;
+    const user = req.user as { email: string } | undefined;
+    if (!user || !user.email) {
+        throw new ApiError("User not authenticated", 401);
+    }
+    const { email } = user;
 
-        await prisma.user.update({where:{
-            email:email
+    await prisma.user.update({
+        where: {
+            email: email
         },
-    data:{
-        refreshToken:null
-    }});
+        data: {
+            refreshToken: null
+        }
+    });
 
  res.clearCookie('accessToken')
     .clearCookie('refreshToken')
@@ -185,12 +185,39 @@ const refreshAccessToken = asyncHandler(async (req: Request, res: Response) => {
   );
 
 });
+const googleCallbackHandler = asyncHandler(async (req: Request, res: Response) => {
+    // req.user should contain the user directly from Passport
+    const user = req.user as any; // Better typing needed
+
+    if (!user) {
+        throw new ApiError("Authentication failed", 401);
+    }
+
+    const accessToken = generateAccessToken({ id: user.id, email: user.email });
+    const refreshToken = generateRefreshToken({ id: user.id, email: user.email });
+
+    // Save refresh token to database
+    await prisma.user.update({
+        where: { id: user.id },
+        data: { refreshToken }
+    });
+
+    const options = {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'strict' as const
+    };
+
+    res
+        .cookie("accessToken", accessToken, options)
+        .cookie("refreshToken", refreshToken, options).redirect(`http://localhost:5173/home`);
+});
 
 const updateUser = asyncHandler(async (req: Request, res: Response) => {
 
      res.status(201).json(
         new ApiResponse(201, {}, "update successful")
-    );
+    );  
 });
 
 export {
@@ -198,5 +225,6 @@ export {
     loginUser,
     logoutUser,
     refreshAccessToken,
-    updateUser
+    updateUser,
+    googleCallbackHandler
 }    

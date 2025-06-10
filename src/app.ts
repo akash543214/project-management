@@ -4,7 +4,9 @@ import helmet from 'helmet';
 import cors from 'cors';
 import errorHandler from './middlewares/errorHandler';
 import cookieParser from "cookie-parser";
-
+import './config/passport';
+import passport from 'passport';
+  
 require('dotenv').config();
 
 const app = express();
@@ -24,6 +26,8 @@ app.use(cookieParser());
 
 import userRouter from './routes/users.routes';
 import ApiError from './utils/apiError';
+
+app.use(passport.initialize());
 
 app.use("/api", userRouter);
 // Catch all unknown routes
