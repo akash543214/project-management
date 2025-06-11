@@ -71,7 +71,7 @@ const createProject = asyncHandler(async (req: Request<{}, {}, CreateProjectRequ
 const deleteProject = asyncHandler(async (req: Request, res: Response) => {
 
         
-    const projectId = Number(req.query.id);
+    const projectId = Number(req.params.id);
         
     if(!projectId)
     {
@@ -101,7 +101,7 @@ const updateProject = asyncHandler(async (req: Request<{}, {}, CreateProjectRequ
      throw new ApiError("No project Id provided",401);
     }
 
-        const updateProject = await prisma.project.update({
+        const updatedProject = await prisma.project.update({
          where: {
           id: projectId,
          },
@@ -109,7 +109,7 @@ const updateProject = asyncHandler(async (req: Request<{}, {}, CreateProjectRequ
         })
 
      res.status(201).json(
-        new ApiResponse(200,updateProject, "delete successful")
+        new ApiResponse(200,updatedProject, "delete successful")
     );  
 });
 

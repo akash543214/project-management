@@ -3,19 +3,22 @@ import {
      createTask,
     deleteTask,
     updateTask,
-    getTasks,
+    getTopLevelTasks,
     getTaskById 
 } from '../controllers/task.controller'
-//import { createValidationMiddleware } from "../schemas/user.schema";
 import { verifyJWT } from "../middlewares/auth.middleware";
-
+import { CreateTaskSchema } from "../schemas/task.schema";
+import { UpdateTaskSchema } from "../schemas/task.schema";
+import { createValidationMiddleware } from "../utils/createValidationMiddleware";
+const validateTaskData = createValidationMiddleware(CreateTaskSchema);
+const validateUpdateTaskData = createValidationMiddleware(UpdateTaskSchema);
 const router = Router();
 
-router.route('/get-tasks').get(verifyJWT,getTasks);
-router.route('/get-task/:id').get(verifyJWT,getTaskById);
-router.route('/delete-task').delete(verifyJWT,deleteTask);
-router.route('/update-task').patch(verifyJWT,updateTask);
-router.route('/create-task').post(verifyJWT,createTask);
+router.route('/top-level-tasks/:projectId').get(verifyJWT,getTopLevelTasks);
+router.route('/task/:id').get(verifyJWT,getTaskById);
+router.route('/delete-task/:id').delete(verifyJWT,deleteTask);
+router.route('/update-task').patch(verifyJWT,validateUpdateTaskData,updateTask);
+router.route('/create-task').post(verifyJWT,validateTaskData,createTask);
 
 
 export default router; 
