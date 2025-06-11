@@ -11,7 +11,8 @@ import './lib/prisma'; // <- Ensure this runs at app startup
 import errorHandler from './middlewares/errorHandler';
 import authRouter from './routes/auth.routes';
 import userRouter from './routes/users.routes';
-
+import projectRouter from './routes/project.routes';
+import taskRouter from './routes/task.routes';
 import ApiError from './utils/apiError';
 
 require('dotenv').config();
@@ -35,7 +36,8 @@ app.use(passport.initialize());
 // Routes
 app.use("/api", authRouter);
 app.use("/api/user", userRouter);
-
+app.use("/api/project", projectRouter);
+app.use("/api/task", taskRouter);
 
 // 404 handler
 app.use((req, _, next) => {
