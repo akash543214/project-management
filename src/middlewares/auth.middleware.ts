@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import ApiError from "../utils/apiError";
 import { verifyAccessToken } from "../utils/jwt";
-
+import { UserPayload } from '../types/common';
 export const verifyJWT = (req: Request, res: Response, next: NextFunction) => {
 
   // Assuming access token cookie is named 'accessToken'
@@ -12,7 +12,7 @@ export const verifyJWT = (req: Request, res: Response, next: NextFunction) => {
   }
 
   try {
-    const payload = verifyAccessToken(token) as { id: number; email: string };
+    const payload = verifyAccessToken(token) as UserPayload;
     
     // Attach user info to req for downstream handlers
     (req as any).user = payload;

@@ -9,7 +9,9 @@ import passport from 'passport';
 import './config/passport';
 import './lib/prisma'; // <- Ensure this runs at app startup
 import errorHandler from './middlewares/errorHandler';
+import authRouter from './routes/auth.routes';
 import userRouter from './routes/users.routes';
+
 import ApiError from './utils/apiError';
 
 require('dotenv').config();
@@ -31,7 +33,9 @@ app.use(cookieParser());
 app.use(passport.initialize());
 
 // Routes
-app.use("/api", userRouter);
+app.use("/api", authRouter);
+app.use("/api/user", userRouter);
+
 
 // 404 handler
 app.use((req, _, next) => {
