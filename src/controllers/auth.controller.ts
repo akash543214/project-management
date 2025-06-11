@@ -1,8 +1,6 @@
 import { Request, Response } from 'express';
 import { asyncHandler } from '../utils/asyncHandler';
 import { verifyRefreshToken } from '../utils/jwt';
-// Extend Express Request interface to include 'user' (compatible with passport)
-
 import { ApiResponse } from '../utils/apiResponse';
 import ApiError from '../utils/apiError';
 import bcrypt from "bcrypt";
@@ -11,13 +9,14 @@ import { LoginUserSchema } from '../schemas/user.schema';
 import { generateAccessToken,generateRefreshToken } from '../utils/jwt';
 import { z } from "zod";
 import { UserPayload } from '../types/common';
-
 import { prisma } from '../lib/prisma';
-import { use } from 'passport';
 
 // Type definitions for request bodies
 type RegisterUserRequest = z.infer<typeof RegisterUserSchema>;
 type LoginUserRequest = z.infer<typeof LoginUserSchema>;
+
+
+
 
 const registerUser = asyncHandler(async (req: Request<{}, {}, RegisterUserRequest>, res: Response) => {
   
@@ -181,6 +180,8 @@ const refreshAccessToken = asyncHandler(async (req: Request, res: Response) => {
 
 });
 const googleCallbackHandler = asyncHandler(async (req: Request, res: Response) => {
+
+  
     // req.user should contain the user directly from Passport
     const user = req.user as any; // Better typing needed
 

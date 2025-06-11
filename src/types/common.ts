@@ -5,3 +5,8 @@ export type UserPayload = {
   iat?: number;
   exp?: number;
 };
+
+export type ProjectData = {
+   title: string; 
+   description: string | null 
+  };

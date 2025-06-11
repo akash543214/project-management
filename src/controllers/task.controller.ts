@@ -15,6 +15,13 @@ const getTasks = asyncHandler(async (req: Request, res: Response) => {
     );  
 });
 
+
+const getTaskById = asyncHandler(async (req: Request, res: Response) => {
+
+     res.status(201).json(
+        new ApiResponse(201, {}, "task fetched successfuly")
+    );  
+});
 const createTask = asyncHandler(async (req: Request, res: Response) => {
 
      res.status(201).json(
@@ -42,5 +49,6 @@ export {
     createTask,
     deleteTask,
     updateTask,
-    getTasks 
+    getTasks,
+    getTaskById 
 }    

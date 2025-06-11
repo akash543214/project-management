@@ -8,7 +8,7 @@ import {
     googleCallbackHandler,
     verifyLoginSession
 } from '../controllers/auth.controller'
-import { createValidationMiddleware } from "../schemas/user.schema";
+import { createValidationMiddleware } from "../utils/createValidationMiddleware";
 import { RegisterUserSchema } from "../schemas/user.schema";
 import { LoginUserSchema } from "../schemas/user.schema";
 import { verifyJWT } from "../middlewares/auth.middleware";

@@ -1,7 +1,5 @@
 import { z } from 'zod';
-import { Request, Response } from "express";
-import ApiError from '../utils/apiError';
-import { NextFunction } from 'express';
+
 // Registration Schema
 export const RegisterUserSchema = z.object({
     name: z
@@ -128,21 +126,5 @@ export type ChangePasswordType = z.infer<typeof ChangePasswordSchema>;
 export type EmailVerificationType = z.infer<typeof EmailVerificationSchema>;
 export type UpdateProfileType = z.infer<typeof UpdateProfileSchema>;
 
-// Generic validation middleware factory
-export const createValidationMiddleware = (schema: z.ZodSchema) => {
-  return (req: Request, res: Response, next: NextFunction) => {
-    try {
-      const validatedData = schema.parse(req.body);
-      req.body = validatedData;
-      next();
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        const firstError = error.errors[0];
-        // Throw custom ApiError with first validation message
-        throw new ApiError(firstError.message, 400);
-      }
-      throw new ApiError('Invalid input data', 400);
-    }
-  };
-};
+
 
