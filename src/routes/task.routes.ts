@@ -17,7 +17,7 @@ const router = Router();
 router.route('/top-level-tasks/:projectId').get(verifyJWT,getTopLevelTasks);
 router.route('/task/:id').get(verifyJWT,getTaskById);
 router.route('/delete-task/:id').delete(verifyJWT,deleteTask);
-router.route('/update-task').patch(verifyJWT,validateUpdateTaskData,updateTask);
+router.route('/update-task/:id').patch(verifyJWT,validateUpdateTaskData,updateTask);
 router.route('/create-task').post(verifyJWT,validateTaskData,createTask);
 
 

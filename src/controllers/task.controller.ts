@@ -3,7 +3,7 @@ import { asyncHandler } from '../utils/asyncHandler';
 import { ApiResponse } from '../utils/apiResponse';
 import ApiError from '../utils/apiError';
 import { z } from "zod";
-//import { UserPayload } from '../types/common';
+import { UserPayload } from '../types/common';
 import { prisma } from '../lib/prisma';
 import { CreateTaskSchema } from '../schemas/task.schema';
 import { UpdateTaskSchema } from '../schemas/task.schema';
@@ -126,25 +126,39 @@ const taskId = Number(req.params.id);
     );  
 });
 
-const updateTask = asyncHandler(async (req: Request<{}, {}, UpdateTaskRequest>, res: Response) => {
+const updateTask = asyncHandler(async (req: Request<{ id: string }, {}, UpdateTaskRequest>, 
+  res: Response) => {
 
-      const taskId = Number(req.query.id);
-        const updateData  = req.body;
-         
-         if(!taskId)
-        {
-         throw new ApiError("No task Id provided",401);
-        }
-    
-            const updatedTask = await prisma.task.update({
+     const taskId = Number(req.params.id);
+      const updateData = req.body;
+      const user = req.user as UserPayload;
+  
+  if (!taskId || isNaN(taskId)) {
+    throw new ApiError("Invalid task ID provided", 400);
+  }
+
+  // Check if task exists and user has permission
+  const existingTask = await prisma.task.findUnique({
+    where: { id: taskId }
+  });
+
+  if (!existingTask) {
+    throw new ApiError("Task not found", 404);
+  }
+
+  //if (existingTask.assignee_id !== user.id) {
+   // throw new ApiError("Not authorized to update this task", 403);
+  //}
+
+           const updatedTask = await prisma.task.update({
              where: {
               id: taskId,
              },
               data: updateData,
             })
     
-     res.status(201).json(
-        new ApiResponse(201,updatedTask, "delete successful")
+     res.status(200).json(
+        new ApiResponse(200,updatedTask, "update successful")
     );  
 });
 
