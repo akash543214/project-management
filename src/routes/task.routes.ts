@@ -4,7 +4,11 @@ import {
     deleteTask,
     updateTask,
     getTopLevelTasks,
-    getTaskById 
+    getTaskById,
+    getAllSubtasks,
+    getFirstLevelSubtasks,
+    getTopTasksWithChildren,
+    getTasksWithAllSubtasks 
 } from '../controllers/task.controller'
 import { verifyJWT } from "../middlewares/auth.middleware";
 import { CreateTaskSchema } from "../schemas/task.schema";
@@ -15,10 +19,14 @@ const validateUpdateTaskData = createValidationMiddleware(UpdateTaskSchema);
 const router = Router();
 
 router.route('/top-level-tasks/:projectId').get(verifyJWT,getTopLevelTasks);
-router.route('/task/:id').get(verifyJWT,getTaskById);
-router.route('/delete-task/:id').delete(verifyJWT,deleteTask);
-router.route('/update-task/:id').patch(verifyJWT,validateUpdateTaskData,updateTask);
-router.route('/create-task').post(verifyJWT,validateTaskData,createTask);
+router.route('/tasks-with-firstlevel-subtaks/:projectId').get(verifyJWT,getTopTasksWithChildren);
+router.route('/tasks-with-allsubtasks/:projectId').get(verifyJWT,getTasksWithAllSubtasks);
+router.route('/get-task/:taskId').get(verifyJWT,getTaskById);
+router.route('/allsubtasks/:taskId').get(verifyJWT,getAllSubtasks);
+router.route('/get-firstlevel-tasks/:taskId').get(verifyJWT,getFirstLevelSubtasks);
+router.route('/delete-task/:taskId').delete(verifyJWT,deleteTask);
+router.route('/update-task/:taskId').patch(verifyJWT,validateUpdateTaskData,updateTask);
+router.route('/create-task/:projectId').post(verifyJWT,validateTaskData,createTask);
 
 
 export default router; 

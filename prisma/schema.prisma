@@ -21,6 +21,8 @@ model User {
 
   projects     Project[]
   tasks        Task[]        @relation("AssignedTasks")
+  owned_tasks  Task[]        @relation("TaskOwner")      
+
 }
 
 model Project {
@@ -39,6 +41,7 @@ model Task {
   title           String
   content         String?
   project_id      Int
+  owner_id         Int
   parent_task_id  Int?
   assignee_id     Int?
   status          TaskStatus   @default(PENDING)
@@ -49,6 +52,7 @@ model Task {
   project         Project    @relation(fields: [project_id], references: [id], onDelete: Cascade)
   assignee        User?      @relation("AssignedTasks", fields: [assignee_id], references: [id])
   parent_task     Task?      @relation("Subtasks", fields: [parent_task_id], references: [id])
+  owner           User       @relation("TaskOwner", fields: [owner_id], references: [id])  
   subtasks        Task[]     @relation("Subtasks")
 }
 
@@ -56,7 +60,6 @@ enum TaskStatus {
   PENDING
   IN_PROGRESS
   COMPLETED
-  BLOCKED
 }
 
 enum TaskPriority {

@@ -10,14 +10,23 @@ import { UpdateTaskSchema } from '../schemas/task.schema';
 type CreateTaskRequest = z.infer<typeof CreateTaskSchema>;
 type UpdateTaskRequest = z.infer<typeof UpdateTaskSchema>;
 
-const createTask = asyncHandler(async (req: Request<{}, {}, CreateTaskRequest>, res: Response) => {
+const createTask = asyncHandler(async (req: Request<{ projectId: string }, {}, CreateTaskRequest>, res: Response) => {
 
-      const projectId = Number(req.query.id);
+      const projectId = Number(req.params.projectId);
+        const user = req.user as UserPayload;
 
            if(!projectId)
           {
            throw new ApiError("No project Id provided",401);
           }
+
+          const project = await prisma.project.findFirst({
+                     where: { id: projectId, user_id: user.id },
+                    });
+
+          if (!project) {
+          throw new ApiError("Project not found or access denied", 404);
+            }
 
         const {title,content,priority,status,deadline} = req.body;
 
@@ -30,21 +39,28 @@ const createTask = asyncHandler(async (req: Request<{}, {}, CreateTaskRequest>, 
             priority:priority,
             status:status,
             deadline:deadline,
-            project_id:projectId
+            project_id:projectId,
+            owner_id:user.id
            },
         }
        );
 
-     res.status(201).json(
-        new ApiResponse(201,task, "update successful")
+     res.status(200).json(
+        new ApiResponse(200,task, "update successful")
     );  
 });
 
-
+//fetch all tasks with project id, no subtasks
 const getTopLevelTasks = asyncHandler(async (req: Request, res: Response) => {
 
 
   const projectId = Number(req.params.projectId);
+
+   if(!projectId || isNaN(projectId))
+    {
+     throw new ApiError("Invalid project Id provided",401);
+    }
+
 
   const tasks = await prisma.task.findMany({
     where: {
@@ -56,41 +72,82 @@ const getTopLevelTasks = asyncHandler(async (req: Request, res: Response) => {
   res.json(new ApiResponse(200, tasks, "Top-level tasks fetched"));
 });
 
+//fetch single task with task id
 const getTaskById = asyncHandler(async (req: Request, res: Response) => {
+      const user = req.user as UserPayload;
+    const taskId = Number(req.params.taskId);
 
-     res.status(201).json(
-        new ApiResponse(201, {}, "task fetched successfuly")
+     if(!taskId || isNaN(taskId))
+    {
+     throw new ApiError("Invalid task Id provided",401);
+    }
+
+    const task = await prisma.task.findUnique({
+    where: {
+      id: taskId,
+      owner_id:user.id
+    },
+  });
+     res.status(200).json(
+        new ApiResponse(200, task, "task fetched successfuly")
     );  
 });
 
+//get task and first level subtasks with project id
 const getTopTasksWithChildren = asyncHandler(async (req: Request, res: Response) => {
 
 
   const projectId = Number(req.params.projectId);
+  const user = req.user as UserPayload;
+
+
+ if(!projectId || isNaN(projectId))
+    {
+     throw new ApiError("Invalid task Id provided",401);
+    }
+
 
   const tasks = await prisma.task.findMany({
     where: {
       project_id: projectId,
       parent_task_id: null,
+      owner_id:user.id
     },
     include: {
       subtasks: {
         orderBy: { created_at: 'asc' },
       },
     },
-    orderBy: { created_at: 'desc' },
   });
 
   res.json(new ApiResponse(200, tasks, "Top-level tasks with children fetched"));
 });
 
+//get whole task tree using project id
 const getTasksWithAllSubtasks = asyncHandler(async (req: Request, res: Response) => {
+
   const projectId = Number(req.params.projectId);
+      const user = req.user as UserPayload;
+
+     if(!projectId || isNaN(projectId))
+    {
+     throw new ApiError("Invalid project Id provided",401);
+    }
+
+
+      const project = await prisma.project.findFirst({
+        where: { id: projectId, user_id: user.id },
+        });
+
+    if (!project) {
+     throw new ApiError("Project not found or access denied", 404); 
+    }
 
   const tasks = await prisma.task.findMany({
     where: {
       project_id: projectId,
       parent_task_id: null,
+      owner_id:user.id
     },
     include: {
       subtasks: {
@@ -101,24 +158,73 @@ const getTasksWithAllSubtasks = asyncHandler(async (req: Request, res: Response)
     },
   });
 
+
   res.json(new ApiResponse(200, tasks, "Tasks with all nested subtasks fetched"));
 });
 
+//get all subtasks of a task using task id
+const getAllSubtasks = asyncHandler(async (req: Request, res: Response) => {
+
+    const taskId = Number(req.params.taskId);
+    const user = req.user as UserPayload;
+
+     if(!taskId || isNaN(taskId))
+    {
+     throw new ApiError("Invalid task Id provided",401);
+    }
+
+  const tasks = await prisma.task.findMany({
+    where: {
+      parent_task_id: taskId,
+      owner_id:user.id
+    },
+     include: {
+      subtasks: {
+        orderBy: { created_at: 'asc' },
+      },
+  }});
+
+  res.json(new ApiResponse(200, tasks, "Tasks fetched"));
+
+});
+
+   //fetch first level subtasks of a task using task id
+const getFirstLevelSubtasks = asyncHandler(async (req: Request, res: Response) => {
+
+  const taskId = Number(req.params.taskId);
+   const user = req.user as UserPayload;
+
+   if(!taskId || isNaN(taskId))
+    {
+     throw new ApiError("Invalid task Id provided",401);
+    }
+
+  const tasks = await prisma.task.findMany({
+    where: {
+      parent_task_id: taskId,
+      owner_id:user.id
+    },
+  });
+
+  res.json(new ApiResponse(200, tasks, "Tasks fetched"));
+});
 
 const deleteTask = asyncHandler(async (req: Request, res: Response) => {
 
 
-const taskId = Number(req.params.id);
-        
-    if(!taskId)
+        const taskId = Number(req.params.id);
+         const user = req.user as UserPayload;
+
+    if(!taskId || isNaN(taskId))
     {
-     throw new ApiError("No project Id provided",401);
+     throw new ApiError("Invalid task Id provided",401);
     }
 
     const deletedTask = await prisma.task.delete({
 
      where: {
     id: taskId,
+    owner_id:user.id
   },
     })
      res.status(201).json(
@@ -137,22 +243,13 @@ const updateTask = asyncHandler(async (req: Request<{ id: string }, {}, UpdateTa
     throw new ApiError("Invalid task ID provided", 400);
   }
 
-  // Check if task exists and user has permission
-  const existingTask = await prisma.task.findUnique({
-    where: { id: taskId }
-  });
-
-  if (!existingTask) {
-    throw new ApiError("Task not found", 404);
-  }
-
   //if (existingTask.assignee_id !== user.id) {
    // throw new ApiError("Not authorized to update this task", 403);
   //}
-
            const updatedTask = await prisma.task.update({
              where: {
               id: taskId,
+              owner_id:user.id
              },
               data: updateData,
             })
@@ -169,5 +266,7 @@ export {
     getTopLevelTasks,
     getTaskById,
     getTopTasksWithChildren,
-    getTasksWithAllSubtasks 
+    getTasksWithAllSubtasks,
+    getAllSubtasks,
+    getFirstLevelSubtasks
 }    

@@ -19,7 +19,7 @@ const router = Router();
 router.route('/get-projects').get(verifyJWT,getAllProjects);
 router.route('/get-project/:id').get(verifyJWT,getProjectsById);
 router.route('/delete-project/:id').delete(verifyJWT,deleteProject);
-router.route('/update-project').patch(verifyJWT,validateProjectData,updateProject);
+router.route('/update-project/:id').patch(verifyJWT,validateProjectData,updateProject);
 router.route('/create-project').post(verifyJWT,validateProjectData,createProject);
 
 
