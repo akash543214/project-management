@@ -28,7 +28,7 @@ const createTask = asyncHandler(async (req: Request<{ projectId: string }, {}, C
           throw new ApiError("Project not found or access denied", 404);
             }
 
-        const {title,content,priority,status,deadline} = req.body;
+        const {title,content,priority,status,deadline,parent_task_id} = req.body;
 
          const task = await prisma.task.create(
            { 
@@ -40,7 +40,8 @@ const createTask = asyncHandler(async (req: Request<{ projectId: string }, {}, C
             status:status,
             deadline:deadline,
             project_id:projectId,
-            owner_id:user.id
+            owner_id:user.id,
+            parent_task_id:parent_task_id
            },
         }
        );

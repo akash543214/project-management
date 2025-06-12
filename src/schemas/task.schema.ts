@@ -18,6 +18,7 @@ export const CreateTaskSchema = z.object({
      priority:z.enum(["LOW","MEDIUM","HIGH","URGENT"]),
 
      deadline:z.coerce.date().optional().nullable(),
+     parent_task_id:z.number().nullable()
 });
 
 export const UpdateTaskSchema = z.object({
@@ -38,7 +39,8 @@ export const UpdateTaskSchema = z.object({
      priority:z.enum(["LOW","MEDIUM","HIGH","URGENT"]).optional(),
 
      deadline:z.coerce.date().optional().nullable(),
+     parent_task_id:z.number().nullable()
 
-}).refine((data) => data.title || data.content || data.status || data.priority || data.deadline, {
+}).refine((data) => data.title || data.content || data.status || data.priority || data.deadline || data.parent_task_id, {
     message: "At least one field (title or content) must be provided"
 });
