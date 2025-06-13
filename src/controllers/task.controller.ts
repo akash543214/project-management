@@ -128,7 +128,7 @@ const getTopTasksWithChildren = asyncHandler(async (req: Request, res: Response)
 const getTasksWithAllSubtasks = asyncHandler(async (req: Request, res: Response) => {
 
   const projectId = Number(req.params.projectId);
-      const user = req.user as UserPayload;
+   const user = req.user as UserPayload;
 
      if(!projectId || isNaN(projectId))
     {

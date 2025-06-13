@@ -35,6 +35,6 @@ router.get(
   "/google/callback",
   passport.authenticate("google", { session: false }),
   googleCallbackHandler // <-- This controller sends accessToken + refreshToken
-);
+);  
 
 export default router; 
