@@ -1,26 +1,26 @@
 import { z } from 'zod';
 
-export const CreateTaskSchema = z.object({
+export const CreateTaskSchema: z.ZodType<any> = z.lazy(() =>
+  z.object({
     title: z
-        .string()
-        .trim()
-        .min(1, "Title must be at least 1 characters long")
-        .max(100, "Title must be less than 100 characters"),
-    
-    content: z
-        .string()
-        .trim()
-         .optional()
-        .nullable(),
-    
-     status:z.enum(["PENDING","IN_PROGRESS","COMPLETED"]),
+      .string()
+      .trim()
+      .min(1, "Title must be at least 1 characters long")
+      .max(100, "Title must be less than 100 characters"),
 
-     priority:z.enum(["LOW","MEDIUM","HIGH","URGENT"]),
+    content: z.string().trim().optional().nullable(),
 
-     deadline:z.coerce.date().optional().nullable(),
-     parent_task_id:z.number().optional().nullable(),
-    
-});
+    status: z.enum(["PENDING", "IN_PROGRESS", "COMPLETED"]),
+
+    priority: z.enum(["LOW", "MEDIUM", "HIGH", "URGENT"]),
+
+    deadline: z.coerce.date().optional().nullable(),
+
+    parent_task_id: z.number().optional().nullable(),
+
+    subtasks: z.array(CreateTaskSchema).optional().nullable(),
+  })
+);
 
 export const UpdateTaskSchema = z.object({
     title: z

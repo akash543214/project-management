@@ -7,19 +7,20 @@ import { UserPayload } from '../types/common';
 import { prisma } from '../lib/prisma';
 import { CreateTaskSchema } from '../schemas/task.schema';
 import { UpdateTaskSchema } from '../schemas/task.schema';
-type CreateTaskRequest = z.infer<typeof CreateTaskSchema>;
-type UpdateTaskRequest = z.infer<typeof UpdateTaskSchema>;
 import { TaskSchema } from '../schemas/generatedTaskSchema';
 import {instructor} from '../utils/grogClient';
 import { normalizeTaskData } from '../utils/paresResponse';
 import { TaskData } from '../types/common';
 
+type CreateTaskRequest = z.infer<typeof CreateTaskSchema>;
+type UpdateTaskRequest = z.infer<typeof UpdateTaskSchema>;
 async function insertTaskTree(task:TaskData,
    projectId:number, 
    ownerId:number, 
    parentId:number|null = null)
     {
   // Create the current task
+  console.log(task);
   const created = await prisma.task.create({
     data: {
       title: task.title,
@@ -61,32 +62,15 @@ const createTask = asyncHandler(async (req: Request<{ projectId: string }, {}, C
           throw new ApiError("Project not found or access denied", 404);
             }
 
-       // const {title,content,priority,status,deadline,parent_task_id,subtasks} = req.body;
            const parent_task_id = req.body.parent_task_id ? Number(req.body.parent_task_id) : null;
-        
+        console.log(req.body);
         await insertTaskTree(req.body as TaskData,
         projectId,
         user.id,
         parent_task_id)
               
-        /* const task = await prisma.task.create(
-           { 
-            data: 
-            {
-            title:title,
-            content:content,
-            priority:priority,
-            status:status,
-            deadline:deadline,
-            project_id:projectId,
-            owner_id:user.id,
-            parent_task_id:parent_task_id,
-           },
-        }
-       );
-*/
      res.status(200).json(
-        //new ApiResponse(200,task, "Task created successfully")
+        new ApiResponse(200,{}, "Task created successfully")
     );  
 });
 
@@ -332,8 +316,7 @@ Each task should have the following structure:
       max_retries: 2,
     });
 
-   
-const parsedTasks = normalizeTaskData(result);
+    const parsedTasks = normalizeTaskData(result);
 
     res.status(201).json(
         new ApiResponse(201,parsedTasks, "AI generation successful")

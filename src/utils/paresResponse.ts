@@ -1,48 +1,46 @@
-
- enum TaskStatus {
-  PENDING = "PENDING",
-  IN_PROGRESS = "IN_PROGRESS",
-  COMPLETED = "COMPLETED"
-}
-
- enum TaskPriority {
-  LOW = "LOW",
-  MEDIUM = "MEDIUM",
-  HIGH = "HIGH",
-  URGENT = "URGENT"
-}
-type SimpleTask = {
-  title: string;
-  description: string;
-  subtasks?: SimpleTask[];
-  id?: number;
-  project_id?: number;
-  owner_id?: number;
-  parent_task_id?: number | null;
-  assignee_id?: number | null;
-  status: TaskStatus;
-  priority: TaskPriority;
-  deadline: Date | string;
-};
+import { TaskData } from "../types/common";
+import { TaskStatus, TaskPriority } from "../types/common";
 
 
-  function cleanTask(task: any): SimpleTask {
-    const { title, description, subtasks } = task;
+function cleanTask(task: any, depth = 0, flattened: TaskData[] = []): TaskData {
+  const { title, content, subtasks } = task;
 
-    return {
-      title,
-      description,
-      status:TaskStatus.PENDING,
-      priority: TaskPriority.MEDIUM,
-      deadline: new Date(),
-      subtasks: subtasks?.map(cleanTask),
-    };
+  const cleaned: TaskData = {
+    title,
+    content,
+    status: TaskStatus.PENDING,
+    priority: TaskPriority.MEDIUM,
+    deadline: new Date(),
+  };
+
+  if (Array.isArray(subtasks)) {
+    if (depth < 1) {
+      // Allow 1 level of nesting (i.e., two levels total)
+      cleaned.subtasks = subtasks.map(sub =>
+        cleanTask(sub, depth + 1, flattened)
+      );
+    } else {
+      
+      // Flatten deeper levels
+      subtasks.forEach(sub => {
+        const flat = cleanTask(sub, 0, flattened); // reset depth for root-level
+        flattened.push(flat);
+      });
+    }
   }
+
+  return cleaned;
+}
   
-export function normalizeTaskData(result: any): SimpleTask[] {
-  const raw = result;
-  const tasks = Array.isArray(raw) ? raw : [raw];
+export function normalizeTaskData(result: any): TaskData[] {
+  const raw = Array.isArray(result) ? result : [result];
+  const final: TaskData[] = [];
 
+  raw.forEach(task => {
+    const flattened: TaskData[] = [];
+    const cleaned = cleanTask(task, 0, flattened);
+    final.push(cleaned, ...flattened);
+  });
 
-  return tasks.map(cleanTask);
+  return final;
 }
