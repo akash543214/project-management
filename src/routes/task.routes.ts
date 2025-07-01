@@ -8,7 +8,8 @@ import {
     getAllSubtasks,
     getFirstLevelSubtasks,
     getTopTasksWithChildren,
-    getTasksWithAllSubtasks 
+    getTasksWithAllSubtasks,
+    generateTask 
 } from '../controllers/task.controller'
 import { verifyJWT } from "../middlewares/auth.middleware";
 import { CreateTaskSchema } from "../schemas/task.schema";
@@ -27,6 +28,7 @@ router.route('/get-firstlevel-tasks/:taskId').get(verifyJWT,getFirstLevelSubtask
 router.route('/delete-task/:taskId').delete(verifyJWT,deleteTask);
 router.route('/update-task/:taskId').patch(verifyJWT,validateUpdateTaskData,updateTask);
 router.route('/create-task/:projectId').post(verifyJWT,validateTaskData,createTask);
+router.route('/generate-task').post(verifyJWT,generateTask);
 
 
 export default router; 

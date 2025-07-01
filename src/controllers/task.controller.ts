@@ -9,6 +9,39 @@ import { CreateTaskSchema } from '../schemas/task.schema';
 import { UpdateTaskSchema } from '../schemas/task.schema';
 type CreateTaskRequest = z.infer<typeof CreateTaskSchema>;
 type UpdateTaskRequest = z.infer<typeof UpdateTaskSchema>;
+import { TaskSchema } from '../schemas/generatedTaskSchema';
+import {instructor} from '../utils/grogClient';
+import { normalizeTaskData } from '../utils/paresResponse';
+import { TaskData } from '../types/common';
+
+async function insertTaskTree(task:TaskData,
+   projectId:number, 
+   ownerId:number, 
+   parentId:number|null = null)
+    {
+  // Create the current task
+  const created = await prisma.task.create({
+    data: {
+      title: task.title,
+      content: task.content,
+      priority: task.priority,
+      status: task.status,
+      deadline: task.deadline ? new Date(task.deadline) : null,
+      project_id: projectId,
+      owner_id: ownerId,
+      parent_task_id: parentId,
+    },
+  });
+
+  // If subtasks exist, insert them in parallel
+  if (Array.isArray(task.subtasks) && task.subtasks.length > 0) {
+    await Promise.all(
+      task.subtasks.map((subtask) =>
+        insertTaskTree(subtask, projectId, ownerId, created.id)
+      )
+    );
+  }
+}
 
 const createTask = asyncHandler(async (req: Request<{ projectId: string }, {}, CreateTaskRequest>, res: Response) => {
 
@@ -21,16 +54,22 @@ const createTask = asyncHandler(async (req: Request<{ projectId: string }, {}, C
           }
 
           const project = await prisma.project.findFirst({
-                     where: { id: projectId, user_id: user.id },
-                    });
+               where: { id: projectId, user_id: user.id },
+                 });
 
           if (!project) {
           throw new ApiError("Project not found or access denied", 404);
             }
 
-        const {title,content,priority,status,deadline,parent_task_id} = req.body;
-
-         const task = await prisma.task.create(
+       // const {title,content,priority,status,deadline,parent_task_id,subtasks} = req.body;
+           const parent_task_id = req.body.parent_task_id ? Number(req.body.parent_task_id) : null;
+        
+        await insertTaskTree(req.body as TaskData,
+        projectId,
+        user.id,
+        parent_task_id)
+              
+        /* const task = await prisma.task.create(
            { 
             data: 
             {
@@ -41,13 +80,13 @@ const createTask = asyncHandler(async (req: Request<{ projectId: string }, {}, C
             deadline:deadline,
             project_id:projectId,
             owner_id:user.id,
-            parent_task_id:parent_task_id
+            parent_task_id:parent_task_id,
            },
         }
        );
-
+*/
      res.status(200).json(
-        new ApiResponse(200,task, "update successful")
+        //new ApiResponse(200,task, "Task created successfully")
     );  
 });
 
@@ -146,17 +185,21 @@ const getTasksWithAllSubtasks = asyncHandler(async (req: Request, res: Response)
 
   const tasks = await prisma.task.findMany({
     where: {
-      project_id: projectId,
-      parent_task_id: null,
-      owner_id:user.id
-    },
-    include: {
-      subtasks: {
-        include: {
-          subtasks: true, // 2-level deep
+    project_id: projectId,
+    parent_task_id: null,
+    owner_id: user.id,
+  },
+  include: {
+    subtasks: {
+      include: {
+        subtasks: {
+          orderBy: { created_at: 'asc' }, // Order 2nd-level subtasks
         },
       },
+      orderBy: { created_at: 'asc' }, // Order 1st-level subtasks
     },
+  },
+  orderBy: { created_at: 'asc' },
   });
 
 
@@ -213,10 +256,10 @@ const getFirstLevelSubtasks = asyncHandler(async (req: Request, res: Response) =
 const deleteTask = asyncHandler(async (req: Request, res: Response) => {
 
 
-        const taskId = Number(req.params.id);
+        const taskId = Number(req.params.taskId);
          const user = req.user as UserPayload;
 
-    if(!taskId || isNaN(taskId))
+    if(!taskId)
     {
      throw new ApiError("Invalid task Id provided",401);
     }
@@ -233,14 +276,14 @@ const deleteTask = asyncHandler(async (req: Request, res: Response) => {
     );  
 });
 
-const updateTask = asyncHandler(async (req: Request<{ id: string }, {}, UpdateTaskRequest>, 
+const updateTask = asyncHandler(async (req: Request<{ taskId: string }, {}, UpdateTaskRequest>, 
   res: Response) => {
 
-     const taskId = Number(req.params.id);
+     const taskId = Number(req.params.taskId);
       const updateData = req.body;
       const user = req.user as UserPayload;
-  
-  if (!taskId || isNaN(taskId)) {
+          
+  if (!taskId) {
     throw new ApiError("Invalid task ID provided", 400);
   }
 
@@ -260,6 +303,45 @@ const updateTask = asyncHandler(async (req: Request<{ id: string }, {}, UpdateTa
     );  
 });
 
+const generateTask = asyncHandler(async (req: Request, res: Response) => {
+
+    const { prompt } = req.body;
+
+    const SYSTEM_PROMPT = `You are a project task generator. Return a JSON object with array of tasks.
+Each task should have the following structure:
+                          - title: short and clear
+                          - description: what to do
+                          - subtasks: max 2 levels deep
+                          No IDs, dates, priority, or status.`;
+
+  if (!prompt) {
+    return res.status(400).json({ error: "Missing 'prompt' in request body" });
+  }
+
+  
+    const result = await instructor.chat.completions.create({
+      model: "llama-3.3-70b-versatile", 
+      response_model: {
+        name: "Task",
+        schema: TaskSchema,
+      },
+      messages: [
+        { role: "system", content: SYSTEM_PROMPT },
+        { role: "user", content: prompt },
+      ],
+      max_retries: 2,
+    });
+
+   
+const parsedTasks = normalizeTaskData(result);
+
+    res.status(201).json(
+        new ApiResponse(201,parsedTasks, "AI generation successful")
+    );  
+
+});
+
+
 export {
     createTask,
     deleteTask,
@@ -269,5 +351,6 @@ export {
     getTopTasksWithChildren,
     getTasksWithAllSubtasks,
     getAllSubtasks,
-    getFirstLevelSubtasks
+    getFirstLevelSubtasks,
+    generateTask
 }    

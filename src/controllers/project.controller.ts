@@ -6,7 +6,6 @@ import { z } from "zod";
 import { prisma } from '../lib/prisma';
 import { UserPayload } from '../types/common';
 import { CreateProjectSchema } from '../schemas/project.schema';
-import { ProjectData } from '../types/common';
 
 type CreateProjectRequest = z.infer<typeof CreateProjectSchema>;
 

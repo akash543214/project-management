@@ -225,7 +225,7 @@ const verifyLoginSession = asyncHandler(async (req: Request, res: Response) => {
         throw new ApiError("User not found", 404);
     }
 
-    const { password: _, ...userDataWithoutPassword } = userData;
+    const { password: _password, refreshToken: _refreshToken, ...userDataWithoutPassword } = userData;
 
     res.status(200).json(
         new ApiResponse(200, userDataWithoutPassword, "Login verified")
