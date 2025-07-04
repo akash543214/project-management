@@ -231,11 +231,21 @@ const verifyLoginSession = asyncHandler(async (req: Request, res: Response) => {
         new ApiResponse(200, userDataWithoutPassword, "Login verified")
     );
 });
+
+const healthCheck = (req:Request, res: Response)=>{
+
+ res.status(200).json(
+        new ApiResponse(200, {}, "fetched")
+    );
+
+}
+
 export {
     registerUser,
     loginUser,
     logoutUser,
     refreshAccessToken,
     googleCallbackHandler,
-    verifyLoginSession
+    verifyLoginSession,
+    healthCheck
 }    

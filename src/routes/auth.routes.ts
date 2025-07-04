@@ -6,7 +6,8 @@ import {
     logoutUser,
     refreshAccessToken,
     googleCallbackHandler,
-    verifyLoginSession
+    verifyLoginSession,
+    healthCheck
 } from '../controllers/auth.controller'
 import { createValidationMiddleware } from "../utils/createValidationMiddleware";
 import { RegisterUserSchema } from "../schemas/user.schema";
@@ -25,6 +26,7 @@ router.route('/login-user').post(validateLogin,loginUser);
 router.route('/logout-user').post(verifyJWT,logoutUser);
 router.route('/refresh-token').post(refreshAccessToken);
 router.route('/verify-login').post(verifyJWT,verifyLoginSession);
+router.route('/health').get(healthCheck);
 
 // Google OAuth
 router.get(
